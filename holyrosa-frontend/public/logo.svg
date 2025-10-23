@@ -1,0 +1,5 @@
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="200" height="200" rx="20" fill="#0ea5e9"/>
+  <path d="M100 50L120 70H110V90H130V80L150 100L130 120V110H110V130H120L100 150L80 130H90V110H70V120L50 100L70 80V90H90V70H80L100 50Z" fill="white"/>
+  <text x="100" y="180" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="white" text-anchor="middle">HOLYROSA</text>
+</svg>
