@@ -43,12 +43,13 @@ export default function SalesPage() {
 
         // Transform delegations into medicine objects
         const medicinesList = userRoleDelegations
-          .filter((delegation: any) => delegation.quantity > 0) // Only include medicines with stock
+          .filter((delegation: any) => delegation.remainingQuantity > 0) // Only include medicines with remaining stock
           .map((delegation: any) => ({
             id: delegation.medicineId,
             name: delegation.medicineName,
             genericName: delegation.genericName,
-            quantity: delegation.quantity,
+            quantity: delegation.remainingQuantity, // Use remaining quantity (after sales) for sales form
+            originalQuantity: delegation.quantity, // Keep original for reference
             barcode: delegation.barcode,
             expiryDate: delegation.expiryDate,
             createdAt: delegation.createdAt,
@@ -110,7 +111,21 @@ export default function SalesPage() {
 
     // Try to sync with API
     try {
-      const apiResponse = await api.post('/sales', {
+      // Calculate discount - handle both percentage and fixed discounts
+      let discountAmount = 0;
+      if (newSale.discountPercentage < 0) {
+        // Fixed amount discount (negative value)
+        discountAmount = Math.abs(newSale.discountPercentage);
+      } else {
+        // Percentage discount
+        const totalBeforeDiscount = newSale.medicines.reduce((sum, med) => {
+          return sum + med.quantity * med.sellingPrice;
+        }, 0);
+        discountAmount = totalBeforeDiscount * (newSale.discountPercentage / 100);
+      }
+
+      // Build the payload for debugging
+      const payload = {
         patientName: newSale.patientName,
         folderNo: newSale.folderNo,
         age: newSale.age,
@@ -121,10 +136,33 @@ export default function SalesPage() {
           quantity: med.quantity,
           sellingPrice: med.sellingPrice,
         })),
-        discount: newSale.medicines.reduce((sum, med) => {
-          return sum + (med.quantity * med.sellingPrice * newSale.discountPercentage) / 100;
-        }, 0),
+        discount: discountAmount,
+      };
+      
+      // Detailed validation before sending
+      console.log('✅ DETAILED PAYLOAD VALIDATION:');
+      console.log('  patientName:', { value: payload.patientName, empty: !payload.patientName });
+      console.log('  folderNo:', { value: payload.folderNo, empty: !payload.folderNo });
+      console.log('  age:', { value: payload.age, type: typeof payload.age, empty: !payload.age });
+      console.log('  sex:', { value: payload.sex, empty: !payload.sex });
+      console.log('  unit:', { value: payload.unit, empty: !payload.unit });
+      console.log('  medicines:', { count: payload.medicines.length, empty: payload.medicines.length === 0 });
+      console.log('  medicines details:', payload.medicines);
+      console.log('  discount:', payload.discount);
+      
+      console.log('📤 Sending to API:', JSON.stringify(payload, null, 2));
+      console.log('🔍 Field types:', {
+        patientName: typeof newSale.patientName,
+        folderNo: typeof newSale.folderNo,
+        age: typeof newSale.age,
+        sex: typeof newSale.sex,
+        unit: typeof newSale.unit,
+        medicinesLength: newSale.medicines.length,
+        discountAmount: typeof discountAmount,
+        discountAmountValue: discountAmount
       });
+      
+      const apiResponse = await api.post('/sales', payload);
       
       console.log('✅ Sale synced to API successfully:', apiResponse.data);
       
@@ -162,8 +200,27 @@ export default function SalesPage() {
       console.log('✅ Refreshed medicines list:', refreshedMedicinesList);
       setDelegatedMedicines(refreshedMedicinesList);
       
-    } catch (error) {
+    } catch (error: any) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to sync sale to database';
       console.error('❌ Error syncing sale to API:', error);
+      console.error('📋 Full error object:', error);
+      console.error('📋 Error response data:', error.response?.data);
+      console.error('📋 Error status:', error.response?.status);
+      
+      // Extract error details from backend response
+      const backendMessage = error.response?.data?.message || errorMessage;
+      const backendReceived = error.response?.data?.received;
+      
+      console.log('🔴 Backend error message:', backendMessage);
+      console.log('📦 Backend received:', backendReceived);
+      
+      // Show error notification to user
+      let alertMessage = `⚠️ Sale Recording Issue:\n\n${backendMessage}\n\n`;
+      if (backendReceived) {
+        alertMessage += `Received data: ${JSON.stringify(backendReceived)}\n\n`;
+      }
+      alertMessage += `The sale is saved locally but may not be in the database. Please contact support or try again.`;
+      alert(alertMessage);
       
       // If API sync fails, at least update local state
       console.log('📋 Updating local state as fallback...');
@@ -292,23 +349,6 @@ export default function SalesPage() {
             )}
           </div>
         </div>
-
-        {/* Sales Records Link */}
-        <div className="mt-8 flex justify-between items-center">
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800 flex-1">
-            <p className="font-semibold mb-1">📊 Sales Records:</p>
-            <p>
-              View all recorded sales and their details.
-            </p>
-          </div>
-          <button
-            onClick={() => router.push('/sales/records')}
-            className="ml-4 px-6 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition"
-          >
-            View Records →
-          </button>
-        </div>
-
 
       </div>
     </div>

@@ -1,7 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState } from 'react';
 import { Medicine } from '@/types';
 import api from '@/lib/api';
 
@@ -11,7 +10,7 @@ interface FormData {
   genericName: string;
   manufacturingDate: string;
   expiryDate: string;
-  packageType: 'Tablet' | 'Syrup' | 'Injection' | 'Cream' | 'Others';
+  packageType: string;
   quantity: number;
   buyPrice: number;
   totalPrice: number;
@@ -31,7 +30,6 @@ interface AddMedicineFormProps {
  * - Success message on submission
  */
 export const AddMedicineForm: React.FC<AddMedicineFormProps> = ({ onSuccess }) => {
-  const router = useRouter();
   const [successMessage, setSuccessMessage] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -51,7 +49,7 @@ export const AddMedicineForm: React.FC<AddMedicineFormProps> = ({ onSuccess }) =
     genericName: '',
     manufacturingDate: getTodayDate(),
     expiryDate: '',
-    packageType: 'Tablet',
+    packageType: '',
     quantity: 0,
     buyPrice: 0,
     totalPrice: 0,
@@ -104,6 +102,7 @@ export const AddMedicineForm: React.FC<AddMedicineFormProps> = ({ onSuccess }) =
 
     if (!formData.name.trim()) newErrors.name = 'Medicine name is required';
     if (!formData.genericName.trim()) newErrors.genericName = 'Generic name is required';
+    if (!formData.packageType.trim()) newErrors.packageType = 'Package type is required';
     if (!formData.manufacturingDate)
       newErrors.manufacturingDate = 'Manufacturing date is required';
     if (!formData.expiryDate) newErrors.expiryDate = 'Expiry date is required';
@@ -169,17 +168,17 @@ export const AddMedicineForm: React.FC<AddMedicineFormProps> = ({ onSuccess }) =
         genericName: '',
         manufacturingDate: today,
         expiryDate: '',
-        packageType: 'Tablet',
+        packageType: '',
         quantity: 0,
         buyPrice: 0,
         totalPrice: 0,
         sellingPrice: 0,
       });
 
-      // Redirect after success
+      // Clear success message after 3 seconds
       setTimeout(() => {
-        router.push('/medicines');
-      }, 1500);
+        setSuccessMessage('');
+      }, 3000);
     } catch (error: any) {
       console.error('Error adding medicine:', error);
       const errorMessage = 
@@ -271,18 +270,19 @@ export const AddMedicineForm: React.FC<AddMedicineFormProps> = ({ onSuccess }) =
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Package Type
             </label>
-            <select
+            <input
+              type="text"
               name="packageType"
               value={formData.packageType}
               onChange={handleInputChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="Tablet">Tablet</option>
-              <option value="Syrup">Syrup</option>
-              <option value="Injection">Injection</option>
-              <option value="Cream">Cream</option>
-              <option value="Others">Others</option>
-            </select>
+              placeholder="e.g., Tablet, Syrup, Injection, Cream"
+              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                errors.packageType ? 'border-red-500' : 'border-gray-300'
+              }`}
+            />
+            {errors.packageType && (
+              <p className="text-red-600 text-xs mt-1">{errors.packageType}</p>
+            )}
           </div>
 
           {/* Manufacturing Date */}

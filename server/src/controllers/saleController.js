@@ -16,35 +16,90 @@ export const createSale = async (req, res) => {
       discount = 0
     } = req.body;
 
+    // Debug logging
+    console.log('📋 CREATE SALE - Full request body:', JSON.stringify(req.body, null, 2));
+    console.log('🔍 Extracted fields:', { patientName, folderNo, age, sex, phoneNumber, invoiceNo, unit, medicinesLength: medicines?.length, discount });
+
     // Validation
     if (!patientName || !medicines || !Array.isArray(medicines) || medicines.length === 0 || !unit) {
-      return res.status(400).json({ message: 'Missing required fields: patientName, medicines array, and unit are required' });
+      console.log('❌ VALIDATION FAILED:', {
+        patientName: !!patientName,
+        medicines: !!medicines,
+        isArray: Array.isArray(medicines),
+        length: medicines?.length,
+        unit: !!unit
+      });
+      return res.status(400).json({ 
+        message: 'Missing required fields: patientName, medicines array, and unit are required',
+        received: { patientName, medicines: medicines?.length || 0, unit }
+      });
     }
 
     // Validate each medicine
-    for (const med of medicines) {
+    for (let i = 0; i < medicines.length; i++) {
+      const med = medicines[i];
+      console.log(`📦 Medicine ${i}:`, { medicineId: med.medicineId, quantity: med.quantity, sellingPrice: med.sellingPrice });
       if (!med.medicineId || !med.quantity || med.sellingPrice === undefined) {
-        return res.status(400).json({ message: 'Each medicine must have medicineId, quantity, and sellingPrice' });
+        console.log(`❌ MEDICINE VALIDATION FAILED at index ${i}:`, med);
+        return res.status(400).json({ 
+          message: 'Each medicine must have medicineId, quantity, and sellingPrice',
+          failedMedicine: med,
+          index: i
+        });
       }
     }
 
     connection = await pool.getConnection();
 
     // Validate all medicines exist and have sufficient quantity
-    for (const med of medicines) {
-      const [medicineRows] = await connection.query(
-        'SELECT quantity FROM medicines WHERE id = ?',
-        [med.medicineId]
-      );
+    // For IPP/Dispensary: check delegations. For others: check medicines inventory
+    const userRole = req.user?.role;
+    const isIPPOrDispensary = userRole === 'ipp' || userRole === 'dispensary';
 
-      if (medicineRows.length === 0) {
-        connection.release();
-        return res.status(404).json({ message: `Medicine with ID ${med.medicineId} not found` });
+    for (const med of medicines) {
+      let availableQuantity = 0;
+
+      if (isIPPOrDispensary) {
+        // For IPP/Dispensary, check their delegation quantity
+        console.log(`🔍 Checking delegation for role: ${userRole}, medicine: ${med.medicineId}`);
+        const [delegationRows] = await connection.query(
+          `SELECT quantity FROM delegations 
+           WHERE medicine_id = ? AND delegated_to = ? AND quantity > 0`,
+          [med.medicineId, userRole]
+        );
+
+        if (delegationRows.length === 0) {
+          connection.release();
+          return res.status(404).json({ 
+            message: `Medicine ${med.medicineId} not delegated to ${userRole} or no quantity available` 
+          });
+        }
+
+        availableQuantity = delegationRows[0].quantity;
+        console.log(`✅ Delegation found for medicine ${med.medicineId}: ${availableQuantity} units`);
+      } else {
+        // For admin/store_officer, check central medicines inventory
+        console.log(`🔍 Checking medicines inventory for medicine: ${med.medicineId}`);
+        const [medicineRows] = await connection.query(
+          'SELECT quantity FROM medicines WHERE id = ?',
+          [med.medicineId]
+        );
+
+        if (medicineRows.length === 0) {
+          connection.release();
+          return res.status(404).json({ message: `Medicine with ID ${med.medicineId} not found` });
+        }
+
+        availableQuantity = medicineRows[0].quantity;
+        console.log(`✅ Medicine found: ${availableQuantity} units available`);
       }
 
-      if (medicineRows[0].quantity < med.quantity) {
+      // Check if quantity is sufficient
+      if (availableQuantity < med.quantity) {
         connection.release();
-        return res.status(400).json({ message: `Insufficient quantity for medicine ${med.medicineId}` });
+        return res.status(400).json({ 
+          message: `Insufficient quantity for medicine ${med.medicineId}. Available: ${availableQuantity}, Requested: ${med.quantity}` 
+        });
       }
     }
 
@@ -53,7 +108,18 @@ export const createSale = async (req, res) => {
     let totalAmount = 0;
 
     for (const med of medicines) {
-      const totalPrice = (med.quantity * med.sellingPrice);
+      const subtotal = (med.quantity * med.sellingPrice);
+      
+      // Apply discount to get final total_price
+      let discountAmount = 0;
+      if (discount < 0) {
+        // Fixed amount discount (negative value)
+        discountAmount = Math.abs(discount);
+      } else if (discount > 0) {
+        // Percentage discount
+        discountAmount = subtotal * (discount / 100);
+      }
+      const totalPrice = Math.max(0, subtotal - discountAmount);
       
       // Insert sale record
       const [result] = await connection.query(
@@ -72,7 +138,7 @@ export const createSale = async (req, res) => {
           med.medicineId,
           med.quantity,
           med.sellingPrice,
-          0, // Individual discount per item
+          discountAmount, // Store actual discount amount
           totalPrice,
           req.user?.id || null
         ]
@@ -81,29 +147,26 @@ export const createSale = async (req, res) => {
       createdSaleIds.push(result.insertId);
       totalAmount += totalPrice;
 
-      // Reduce medicine quantity in medicines table
-      await connection.query(
-        'UPDATE medicines SET quantity = quantity - ? WHERE id = ?',
-        [med.quantity, med.medicineId]
-      );
-
-      // Reduce delegated medicine quantity in delegations table
-      // Update the most recent delegation record for this medicine
-      await connection.query(
-        `UPDATE delegations d
-         SET d.quantity = CASE 
-           WHEN d.quantity - ? <= 0 THEN 0
-           ELSE d.quantity - ?
-         END
-         WHERE d.medicine_id = ? AND d.quantity > 0
-         AND d.id = (
-           SELECT MAX(id) FROM (
-             SELECT id FROM delegations 
-             WHERE medicine_id = ? AND quantity > 0
-           ) AS latest_delegation
-         )`,
-        [med.quantity, med.quantity, med.medicineId, med.medicineId]
-      );
+      if (isIPPOrDispensary) {
+        // For IPP/Dispensary: ONLY deduct from their delegation
+        console.log(`📉 Deducting ${med.quantity} from ${userRole} delegation for medicine ${med.medicineId}`);
+        await connection.query(
+          `UPDATE delegations 
+           SET quantity = CASE 
+             WHEN quantity - ? <= 0 THEN 0
+             ELSE quantity - ?
+           END
+           WHERE medicine_id = ? AND delegated_to = ?`,
+          [med.quantity, med.quantity, med.medicineId, userRole]
+        );
+      } else {
+        // For admin/store_officer: deduct from central medicines inventory
+        console.log(`📉 Deducting ${med.quantity} from medicines inventory for medicine ${med.medicineId}`);
+        await connection.query(
+          'UPDATE medicines SET quantity = quantity - ? WHERE id = ?',
+          [med.quantity, med.medicineId]
+        );
+      }
     }
 
     connection.release();
@@ -160,10 +223,21 @@ export const getSales = async (req, res) => {
     );
     const total = countRows[0].total;
 
+    // Calculate totals for all sales (excluding returned items from revenue)
+    const [totalRows] = await connection.query(
+      `SELECT 
+        SUM(CASE WHEN s.status != 'returned' THEN s.total_price ELSE 0 END) as totalRevenue,
+        SUM(s.quantity) as totalItemsSold,
+        COUNT(*) as txCount
+       FROM sales s
+       WHERE ${whereClause}`,
+      params
+    );
+
     // Get paginated sales
     const [sales] = await connection.query(
       `SELECT s.id, s.patient_name, s.folder_no, s.age, s.sex, s.phone_number, s.invoice_no, 
-              s.unit, s.medicine_id, s.quantity, s.selling_price, s.discount, s.total_price, s.sale_date,
+              COALESCE(s.unit, 'N/A') as unit, s.medicine_id, s.quantity, s.selling_price, s.discount, s.total_price, s.sale_date,
               s.status, s.returned_quantity,
               m.name, m.barcode, u.role as sold_by_role, u.name as sold_by_name
        FROM sales s
@@ -177,15 +251,8 @@ export const getSales = async (req, res) => {
 
     connection.release();
 
-    // Convert snake_case to camelCase and calculate totals
-    let totalRevenue = 0;
-    let totalItemsSold = 0;
+    // Convert snake_case to camelCase
     const formattedSales = sales.map(sale => {
-      // Only count revenue if not returned
-      if (sale.status !== 'returned') {
-        totalRevenue += parseFloat(sale.total_price) || 0;
-        totalItemsSold += parseInt(sale.quantity) || 0;
-      }
       return {
         id: sale.id,
         patientName: sale.patient_name,
@@ -210,6 +277,11 @@ export const getSales = async (req, res) => {
       };
     });
 
+    // Get totals from the database query
+    const totalRevenue = parseFloat(totalRows[0].totalRevenue) || 0;
+    const totalItemsSold = parseInt(totalRows[0].totalItemsSold) || 0;
+    const totalTxCount = parseInt(totalRows[0].txCount) || 0;
+
     res.json({
       items: formattedSales,
       total,
@@ -219,7 +291,7 @@ export const getSales = async (req, res) => {
       totals: {
         revenue: totalRevenue,
         itemsSold: totalItemsSold,
-        txCount: formattedSales.length
+        txCount: totalTxCount
       }
     });
   } catch (error) {

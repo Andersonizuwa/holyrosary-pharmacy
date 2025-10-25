@@ -4,6 +4,7 @@ import authRoutes from './routes/authRoutes.js';
 import medicineRoutes from './routes/medicineRoutes.js';
 import delegationRoutes from './routes/delegationRoutes.js';
 import saleRoutes from './routes/saleRoutes.js';
+import returnRoutes from './routes/returnRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
 
@@ -23,6 +24,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/medicines', medicineRoutes);
 app.use('/api/delegations', delegationRoutes);
 app.use('/api/sales', saleRoutes);
+app.use('/api/returns', returnRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 

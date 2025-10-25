@@ -37,7 +37,10 @@ export interface Delegation {
   medicineId: string;
   medicineName: string;
   genericName: string;
-  quantity: number;
+  quantity: number; // Original delegated quantity (immutable)
+  originalQuantity?: number; // Same as quantity (immutable historical record)
+  remainingQuantity?: number; // Remaining after sales
+  soldQuantity?: number; // Total quantity sold
   fromUserId?: string;
   fromUserName?: string;
   toRole: 'ipp' | 'dispensary' | 'other';
@@ -48,6 +51,7 @@ export interface Delegation {
   delegationDate: string;
   expiryDate?: string;
   barcode?: string;
+  sellingPrice?: number;
   createdAt: string;
   updatedAt?: string;
 }

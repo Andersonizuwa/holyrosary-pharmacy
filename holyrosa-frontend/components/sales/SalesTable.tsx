@@ -9,6 +9,22 @@ interface SalesTableProps {
   onDelete: (index: number, action: 'return', returnQuantities?: { medicineId: string; quantity: number }[]) => void;
 }
 
+// Helper function to calculate original amount before discount
+const calculateOriginalAmount = (sale: RecordedSale): number => {
+  return sale.medicines.reduce((sum, med) => sum + (med.quantity * med.sellingPrice), 0);
+};
+
+// Helper function to format discount display
+const formatDiscountDisplay = (discountPercentage: number, originalAmount: number): string => {
+  if (discountPercentage === 0) return 'None';
+  if (discountPercentage < 0) {
+    // Fixed amount discount
+    return `₦${Math.abs(discountPercentage).toFixed(2)}`;
+  }
+  // Percentage discount
+  return `${discountPercentage.toFixed(1)}%`;
+};
+
 export const SalesTable: React.FC<SalesTableProps> = ({ sales, onDelete }) => {
   const [selectedSaleIndex, setSelectedSaleIndex] = useState<number | null>(null);
   const [isReturnModalOpen, setIsReturnModalOpen] = useState(false);
@@ -61,8 +77,9 @@ export const SalesTable: React.FC<SalesTableProps> = ({ sales, onDelete }) => {
                 <th className="px-4 py-3 text-left font-semibold text-gray-700">Unit</th>
                 <th className="px-4 py-3 text-left font-semibold text-gray-700">Medicine(s)</th>
                 <th className="px-4 py-3 text-center font-semibold text-gray-700">Qty</th>
-                <th className="px-4 py-3 text-center font-semibold text-gray-700">Discount %</th>
-                <th className="px-4 py-3 text-right font-semibold text-gray-700">Total Amount</th>
+                <th className="px-4 py-3 text-center font-semibold text-gray-700">Discount</th>
+                <th className="px-4 py-3 text-right font-semibold text-gray-700">Original Amount</th>
+                <th className="px-4 py-3 text-right font-semibold text-gray-700">Amount Paid</th>
                 <th className="px-4 py-3 text-left font-semibold text-gray-700">Date/Time</th>
                 <th className="px-4 py-3 text-center font-semibold text-gray-700">Action</th>
               </tr>
@@ -92,9 +109,18 @@ export const SalesTable: React.FC<SalesTableProps> = ({ sales, onDelete }) => {
                     {sale.medicines.reduce((sum, med) => sum + med.quantity, 0)}
                   </td>
                   <td className="px-4 py-3 text-center">
-                    <span className="inline-block bg-blue-100 text-blue-800 px-2 py-1 rounded font-semibold">
-                      {sale.discountPercentage}%
+                    <span className={`inline-block px-2 py-1 rounded font-semibold ${
+                      sale.discountPercentage === 0 
+                        ? 'bg-gray-100 text-gray-800' 
+                        : sale.discountPercentage < 0
+                        ? 'bg-yellow-100 text-yellow-800'
+                        : 'bg-blue-100 text-blue-800'
+                    }`}>
+                      {formatDiscountDisplay(sale.discountPercentage, calculateOriginalAmount(sale))}
                     </span>
+                  </td>
+                  <td className="px-4 py-3 text-right font-semibold text-gray-600">
+                    ₦{calculateOriginalAmount(sale).toFixed(2)}
                   </td>
                   <td className="px-4 py-3 text-right font-bold text-green-600">
                     ₦{sale.totalAmount.toFixed(2)}

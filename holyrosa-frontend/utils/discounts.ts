@@ -1,6 +1,6 @@
 /**
  * Discount mapping based on Unit/Department
- * Values represent discount percentage
+ * Can be either percentage (0-100) or fixed amount (negative values like -3000 for ₦3000 fixed discount)
  */
 export const UNIT_DISCOUNTS: Record<string, number> = {
   'Ultrasound': 0,
@@ -18,8 +18,8 @@ export const UNIT_DISCOUNTS: Record<string, number> = {
   'SCBU': 0,
   'TCN': 100,
   'NHIS': 10,
-  'Staff': 100, // 3000% capped to 100%
-  'Student': 10,
+  'Staff': -3000, // Fixed ₦3000 discount
+  'Student': -3000, // Fixed ₦3000 discount
   'Chest': 0,
   'OPCD': 0,
   'A&E PATIENT': 0,
@@ -32,16 +32,24 @@ export const UNIT_DISCOUNTS: Record<string, number> = {
  * Calculate discounted total
  * @param quantity - Quantity of medicine
  * @param sellingPrice - Selling price per unit
- * @param discountPercentage - Discount percentage
+ * @param discountValue - Discount percentage (0-100) or fixed amount (negative for fixed discount)
  * @returns Discounted total (min 0)
  */
 export const calculateDiscountedTotal = (
   quantity: number,
   sellingPrice: number,
-  discountPercentage: number
+  discountValue: number
 ): number => {
   const baseTotal = quantity * sellingPrice;
-  const discountAmount = baseTotal * (discountPercentage / 100);
+  
+  // If discount is negative, it's a fixed amount discount
+  if (discountValue < 0) {
+    const fixedDiscount = Math.abs(discountValue);
+    return Math.max(0, baseTotal - fixedDiscount);
+  }
+  
+  // Otherwise, it's a percentage discount
+  const discountAmount = baseTotal * (discountValue / 100);
   return Math.max(0, baseTotal - discountAmount);
 };
 
@@ -57,4 +65,23 @@ export const getUnitDiscount = (unit: string): number => {
  */
 export const getAvailableUnits = (): string[] => {
   return Object.keys(UNIT_DISCOUNTS).sort();
+};
+
+/**
+ * Format discount for display
+ * @param unit - The unit to get discount for
+ * @returns Formatted discount string (e.g., "₦3000" for fixed or "10%" for percentage)
+ */
+export const formatDiscount = (unit: string): string => {
+  const discount = getUnitDiscount(unit);
+  
+  if (discount < 0) {
+    // Fixed amount discount
+    return `₦${Math.abs(discount).toLocaleString('en-NG')}`;
+  } else if (discount > 0) {
+    // Percentage discount
+    return `${discount}%`;
+  }
+  // No discount
+  return 'No discount';
 };

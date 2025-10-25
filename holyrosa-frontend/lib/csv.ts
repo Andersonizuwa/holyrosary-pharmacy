@@ -2,25 +2,34 @@
  * CSV Generation and Download Utilities
  */
 
-interface SaleItem {
+interface SaleRecord {
+  id: number;
+  patientName: string;
+  folderNo?: string;
+  unit: string;
   medicineId: string;
   medicineName: string;
   quantity: number;
-  price: number;
-  total: number;
+  sellingPrice: number;
+  discount: number;
+  totalPrice: number;
+  saleDate: string;
+  soldByRole: string;
+  soldByName: string;
+  invoiceNo: string;
 }
 
 interface Sale {
   id: string;
-  items: SaleItem[];
-  totalAmount: number;
-  soldBy: string;
-  soldByName: string;
-  createdAt: string;
+  items?: SaleRecord[];
+  totalAmount?: number;
+  soldBy?: string;
+  soldByName?: string;
+  createdAt?: string;
 }
 
 interface ReportData {
-  items: Sale[];
+  items: SaleRecord[] | Sale[];
   totals: {
     revenue: number;
     itemsSold: number;
@@ -57,27 +66,58 @@ export function generateSalesReportCSV(data: ReportData, dateFrom: string, dateT
 
   // Detailed sales section
   csv += `DETAILED SALES\n`;
-  csv += `Transaction ID,Date,Sold By,Medicine Name,Quantity,Unit Price (₦),Line Total (₦),Transaction Total (₦)\n`;
+  csv += `Invoice No,Patient Name,Date,Sold By,Unit,Medicine Name,Quantity,Unit Price (₦),Subtotal (₦),Discount (₦),Amount Paid (₦)\n`;
 
-  data.items.forEach((sale) => {
-    const saleDate = new Date(sale.createdAt).toLocaleString('en-NG', {
-      dateStyle: 'short',
-      timeStyle: 'short',
-    });
+  // Check if items are SaleRecord[] (from API) or Sale[] (legacy)
+  const isSaleRecord = (item: any): item is SaleRecord => {
+    return item.patientName !== undefined && item.saleDate !== undefined;
+  };
 
-    sale.items.forEach((item, index) => {
+  data.items.forEach((sale: any) => {
+    if (isSaleRecord(sale)) {
+      // API response format (SaleRecord)
+      const saleDate = new Date(sale.saleDate).toLocaleString('en-NG', {
+        dateStyle: 'short',
+        timeStyle: 'short',
+      });
+      
+      const subtotal = sale.quantity * sale.sellingPrice;
+      
       const row = [
-        escapeCsvField(sale.id),
+        escapeCsvField(sale.invoiceNo),
+        escapeCsvField(sale.patientName),
         escapeCsvField(saleDate),
-        escapeCsvField(sale.soldByName),
-        escapeCsvField(item.medicineName),
-        item.quantity,
-        item.price.toFixed(2),
-        item.total.toFixed(2),
-        index === 0 ? sale.totalAmount.toFixed(2) : '', // Only show transaction total on first item
+        escapeCsvField(sale.soldByRole),
+        escapeCsvField(sale.unit),
+        escapeCsvField(sale.medicineName),
+        sale.quantity,
+        sale.sellingPrice.toFixed(2),
+        subtotal.toFixed(2),
+        sale.discount.toFixed(2),
+        sale.totalPrice.toFixed(2),
       ];
       csv += row.join(',') + '\n';
-    });
+    } else if (sale.items && Array.isArray(sale.items)) {
+      // Legacy format (Sale with items array)
+      const saleDate = new Date(sale.createdAt).toLocaleString('en-NG', {
+        dateStyle: 'short',
+        timeStyle: 'short',
+      });
+
+      sale.items.forEach((item: any, index: number) => {
+        const row = [
+          escapeCsvField(sale.id),
+          escapeCsvField(saleDate),
+          escapeCsvField(sale.soldByName),
+          escapeCsvField(item.medicineName),
+          item.quantity,
+          item.price?.toFixed(2) || '0.00',
+          item.total?.toFixed(2) || '0.00',
+          index === 0 ? sale.totalAmount?.toFixed(2) || '0.00' : '',
+        ];
+        csv += row.join(',') + '\n';
+      });
+    }
   });
 
   return csv;

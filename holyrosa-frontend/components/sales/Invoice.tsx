@@ -192,7 +192,7 @@ export const Invoice: React.FC<InvoiceProps> = ({ data, onClose }) => {
               <div class="invoice-container">
                 <div class="invoice-header">
                   <div class="pharmacy-name">Holy Rosary Pharmacy</div>
-                  <div class="pharmacy-address">Port Harcourt</div>
+                  <div class="pharmacy-address">Owerri</div>
                   <div class="invoice-number">${data.invoiceNumber}</div>
                   <div class="invoice-datetime">${data.date} at ${data.time}</div>
                 </div>
@@ -323,7 +323,7 @@ export const Invoice: React.FC<InvoiceProps> = ({ data, onClose }) => {
         {/* Header */}
         <div className="text-center mb-8 pb-6 border-b-2 border-gray-900">
           <h1 className="text-2xl font-bold text-gray-900">Holy Rosary Pharmacy</h1>
-          <p className="text-sm text-gray-600 mt-1">Port Harcourt</p>
+          <p className="text-sm text-gray-600 mt-1">Owerri</p>
           <p className="text-sm font-bold text-sky-700 mt-3">{data.invoiceNumber}</p>
           <p className="text-xs text-gray-500 mt-2">
             {data.date} at {data.time}

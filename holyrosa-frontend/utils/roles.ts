@@ -49,9 +49,9 @@ export const canDeleteUsers = (role: Role): boolean => {
   return role === 'superadmin';
 };
 
-// Sales - Only IPP and Dispensary
+// Sales - IPP, Dispensary, Admin, and SuperAdmin
 export const canAccessSales = (role: Role): boolean => {
-  return ['ipp', 'dispensary'].includes(role);
+  return ['ipp', 'dispensary', 'admin', 'superadmin'].includes(role);
 };
 
 // Reports - Superadmin and Admin only (not Store Officer)

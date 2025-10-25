@@ -8,30 +8,84 @@ import SalesTable from '@/components/sales/SalesTable';
 import { RecordedSale } from '@/components/sales/SalesForm';
 import api from '@/lib/api';
 
-const SALES_STORAGE_KEY = 'pharmacy_sales_records';
+const RETURNS_STORAGE_KEY = 'pharmacy_return_history';
+
+// Helper function to group flat medicine records into sales transactions
+const groupSalesByTransaction = (items: any[]): RecordedSale[] => {
+  const transactionMap = new Map<string, RecordedSale>();
+
+  items.forEach((item) => {
+    // Group by: patientName + folderNo + date (identifies a unique transaction)
+    const saleDate = item.saleDate ? new Date(item.saleDate).toISOString().split('T')[0] : 'unknown';
+    const key = `${item.patientName}_${item.folderNo || 'none'}_${saleDate}`;
+
+    if (!transactionMap.has(key)) {
+      transactionMap.set(key, {
+        id: item.id,
+        patientName: item.patientName,
+        folderNo: item.folderNo,
+        age: item.age,
+        sex: item.sex,
+        phoneNumber: item.phoneNumber,
+        invoiceNo: item.invoiceNo,
+        unit: item.unit,
+        medicines: [],
+        discountPercentage: item.discount || 0,
+        totalAmount: 0,
+        createdAt: item.saleDate,
+        status: item.status,
+      });
+    }
+
+    const transaction = transactionMap.get(key)!;
+    transaction.medicines.push({
+      medicineId: item.medicineId,
+      medicineName: item.medicineName,
+      quantity: item.quantity,
+      sellingPrice: item.sellingPrice,
+      barcode: item.barcode,
+    });
+    
+    // Update total amount
+    transaction.totalAmount += item.totalPrice;
+  });
+
+  return Array.from(transactionMap.values());
+};
 
 export default function SalesRecordsPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
-  const [sales, setSales] = useState<RecordedSale[]>([]);
+  const [sales, setSales] = useState<any[]>([]);
+  const [isLoadingSales, setIsLoadingSales] = useState(true);
   const [notification, setNotification] = useState<{
     type: 'success' | 'error';
     message: string;
   } | null>(null);
 
-  // Load sales from localStorage on component mount
+  // Load sales from API on component mount
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const savedSales = localStorage.getItem(SALES_STORAGE_KEY);
-      if (savedSales) {
-        try {
-          setSales(JSON.parse(savedSales));
-        } catch (error) {
-          console.error('Error loading sales from localStorage:', error);
-        }
+    const fetchSales = async () => {
+      try {
+        setIsLoadingSales(true);
+        const response = await api.get('/sales?page=1&limit=100');
+        const groupedSales = groupSalesByTransaction(response.data.items || []);
+        setSales(groupedSales);
+      } catch (error) {
+        console.error('Error loading sales from API:', error);
+        setNotification({
+          type: 'error',
+          message: 'Failed to load sales records.',
+        });
+      } finally {
+        setIsLoadingSales(false);
       }
+    };
+
+    if (!loading && user) {
+      fetchSales();
     }
-  }, []);
+  }, [loading, user]);
 
   // Auto-hide notification after 5 seconds
   useEffect(() => {
@@ -41,6 +95,8 @@ export default function SalesRecordsPage() {
     }
   }, [notification]);
 
+
+
   const handleDeleteSale = async (
     index: number,
     action: 'return',
@@ -48,7 +104,6 @@ export default function SalesRecordsPage() {
   ) => {
     try {
       const saleToDelete = sales[index];
-      const newSales = sales.filter((_, i) => i !== index);
 
       // Return: restore selected medicine quantities to delegations
       const quantitiesToReturn = returnQuantities || saleToDelete.medicines.map((med) => ({
@@ -67,16 +122,97 @@ export default function SalesRecordsPage() {
         const response = await api.post('/delegations/restore', restorePayload);
         console.log('✅ Delegations restored via API:', response.data);
 
-        // Update sales in localStorage
-        setSales(newSales);
-        localStorage.setItem(SALES_STORAGE_KEY, JSON.stringify(newSales));
-
+        // Calculate totals
         const totalReturned = quantitiesToReturn.reduce((sum, med) => sum + med.quantity, 0);
         const totalOriginal = saleToDelete.medicines.reduce((sum, med) => sum + med.quantity, 0);
-        const returnMsg =
-          totalReturned === totalOriginal
-            ? `✅ Sale reversed! ${totalReturned} unit(s) returned to stock.`
-            : `✅ Partial return processed! ${totalReturned} out of ${totalOriginal} unit(s) returned to stock.`;
+        const isFullReturn = totalReturned === totalOriginal;
+
+        let newSales: RecordedSale[];
+        let returnMsg: string;
+
+        if (isFullReturn) {
+          // Full return: remove entire sale record
+          newSales = sales.filter((_, i) => i !== index);
+          returnMsg = `✅ Sale reversed! ${totalReturned} unit(s) returned to stock.`;
+        } else {
+          // Partial return: update sale with remaining quantities
+          const returnMap = new Map(quantitiesToReturn.map(r => [r.medicineId, r.quantity]));
+          const remainingMedicines = saleToDelete.medicines
+            .map(med => ({
+              ...med,
+              quantity: med.quantity - (returnMap.get(med.medicineId) || 0),
+            }))
+            .filter(med => med.quantity > 0); // Remove medicines with 0 quantity
+          
+          // Recalculate total amount based on remaining medicines and discount type
+          let newTotalAmount = remainingMedicines.reduce((sum, med) => sum + (med.quantity * med.sellingPrice), 0);
+          
+          if (saleToDelete.discountPercentage < 0) {
+            // Fixed amount discount - keep the same fixed discount
+            newTotalAmount = Math.max(0, newTotalAmount - Math.abs(saleToDelete.discountPercentage));
+          } else {
+            // Percentage discount - apply the same percentage to new total
+            const discountAmount = newTotalAmount * (saleToDelete.discountPercentage / 100);
+            newTotalAmount = Math.max(0, newTotalAmount - discountAmount);
+          }
+          
+          const updatedSale = {
+            ...saleToDelete,
+            medicines: remainingMedicines,
+            totalAmount: newTotalAmount,
+          };
+          
+          newSales = sales.map((sale, i) => (i === index ? updatedSale : sale));
+          returnMsg = `✅ Partial return processed! ${totalReturned} out of ${totalOriginal} unit(s) returned to stock.`;
+        }
+
+        // Log return to return history
+        const returnRecord = {
+          id: Date.now(),
+          saleId: saleToDelete.id || `sale_${saleToDelete.createdAt}`,
+          patientName: saleToDelete.patientName,
+          medicines: quantitiesToReturn.map(item => {
+            // Use String() comparison to handle both string and number IDs
+            const med = saleToDelete.medicines.find(m => String(m.medicineId) === String(item.medicineId));
+            console.log('🔍 Finding medicine:', { item, med, medicines: saleToDelete.medicines });
+            return {
+              medicineId: item.medicineId,
+              medicineName: med?.medicineName || 'Unknown',
+              quantityReturned: item.quantity,
+            };
+          }),
+          totalReturned: totalReturned,
+          totalOriginal: totalOriginal,
+          returnedAt: new Date().toISOString(),
+          isFullReturn: isFullReturn,
+        };
+
+        // Save return to database via API
+        try {
+          await api.post('/returns', {
+            saleId: returnRecord.saleId,
+            patientName: returnRecord.patientName,
+            medicines: returnRecord.medicines.map(m => ({
+              medicineId: m.medicineId,
+              quantityReturned: m.quantityReturned,
+              refundAmount: m.quantityReturned * 0 // Calculate if needed
+            })),
+            totalReturned: returnRecord.totalReturned,
+            totalOriginal: returnRecord.totalOriginal,
+            isFullReturn: returnRecord.isFullReturn
+          });
+        } catch (returnApiError) {
+          console.error('Error saving return to API:', returnApiError);
+        }
+
+        // Reload sales from API
+        try {
+          const response = await api.get('/sales?page=1&limit=100');
+          const groupedSales = groupSalesByTransaction(response.data.items || []);
+          setSales(groupedSales);
+        } catch (reloadError) {
+          console.error('Error reloading sales:', reloadError);
+        }
 
         setNotification({
           type: 'success',
@@ -85,13 +221,9 @@ export default function SalesRecordsPage() {
       } catch (apiError) {
         console.error('❌ Error restoring delegations via API:', apiError);
 
-        // Fallback: local update only
-        setSales(newSales);
-        localStorage.setItem(SALES_STORAGE_KEY, JSON.stringify(newSales));
-
         setNotification({
-          type: 'success',
-          message: `⚠️ Sale record reverted locally (API sync failed, but record removed).`,
+          type: 'error',
+          message: 'Failed to process return. Please try again.',
         });
       }
     } catch (error) {
@@ -103,12 +235,12 @@ export default function SalesRecordsPage() {
     }
   };
 
-  if (loading) {
+  if (loading || isLoadingSales) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
+          <p className="mt-4 text-gray-600">Loading sales records...</p>
         </div>
       </div>
     );
@@ -149,12 +281,14 @@ export default function SalesRecordsPage() {
                   </p>
                 )}
               </div>
-              <button
-                onClick={() => router.back()}
-                className="px-6 py-2 bg-gray-600 text-white rounded-lg font-semibold hover:bg-gray-700 transition"
-              >
-                ← Back
-              </button>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => router.back()}
+                  className="px-6 py-2 bg-gray-600 text-white rounded-lg font-semibold hover:bg-gray-700 transition"
+                >
+                  ← Back
+                </button>
+              </div>
             </div>
           </div>
 

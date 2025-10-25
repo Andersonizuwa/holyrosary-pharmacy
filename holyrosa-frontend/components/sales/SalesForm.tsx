@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Medicine } from '@/types';
-import { calculateDiscountedTotal, getUnitDiscount, getAvailableUnits } from '@/utils/discounts';
+import { calculateDiscountedTotal, getUnitDiscount, getAvailableUnits, formatDiscount } from '@/utils/discounts';
 import { generateInvoiceNumber } from '@/utils/invoiceNumber';
 
 export interface RecordedSale {
@@ -198,8 +198,17 @@ export const SalesForm: React.FC<SalesFormProps> = ({ delegatedMedicines, onSale
       (sum, item) => sum + item.quantity * item.sellingPrice,
       0
     );
-    const discountAmount = totalBeforeDiscount * (discountPercentage / 100);
-    const totalAfterDiscount = totalBeforeDiscount - discountAmount;
+    
+    // Calculate discount amount - handle both percentage and fixed discounts
+    let discountAmount = 0;
+    if (discountPercentage < 0) {
+      // Fixed amount discount (negative value)
+      discountAmount = Math.abs(discountPercentage);
+    } else {
+      // Percentage discount
+      discountAmount = totalBeforeDiscount * (discountPercentage / 100);
+    }
+    const totalAfterDiscount = Math.max(0, totalBeforeDiscount - discountAmount);
 
     const invoiceData = {
       invoiceNumber: sale.invoiceNo,
@@ -374,7 +383,7 @@ export const SalesForm: React.FC<SalesFormProps> = ({ delegatedMedicines, onSale
               {errors.unit && <p className="text-red-600 text-xs mt-1">{errors.unit}</p>}
               {unit && (
                 <p className="text-xs text-blue-600 mt-1">
-                  💰 Discount: {getUnitDiscount(unit)}%
+                  💰 Discount: {formatDiscount(unit)}
                 </p>
               )}
             </div>
@@ -576,9 +585,9 @@ export const SalesForm: React.FC<SalesFormProps> = ({ delegatedMedicines, onSale
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Discount ({unit ? getUnitDiscount(unit) : 0}%)</p>
+                  <p className="text-sm text-gray-600">Discount</p>
                   <p className="text-lg font-semibold text-blue-600">
-                    {unit ? getUnitDiscount(unit) : 0}%
+                    {unit ? formatDiscount(unit) : 'No discount'}
                   </p>
                 </div>
                 <div>
@@ -695,7 +704,9 @@ export const SalesForm: React.FC<SalesFormProps> = ({ delegatedMedicines, onSale
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">Discount Applied</p>
-                  <p className="text-lg font-semibold text-blue-600">{discountPercentage}%</p>
+                  <p className="text-lg font-semibold text-blue-600">
+                    {unit ? formatDiscount(unit) : 'No discount'}
+                  </p>
                 </div>
                 <div className="text-right">
                   <p className="text-sm text-gray-600">Total Sale Amount</p>

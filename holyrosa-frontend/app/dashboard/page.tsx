@@ -164,7 +164,7 @@ export default function Dashboard() {
             </>
           )}
 
-          {role !== 'ipp' && role !== 'dispensary' && (
+          {role !== 'ipp' && role !== 'dispensary' && role !== 'store_officer' && (
             <Card
               title="Today's Sales"
               value={`₦${stats?.todaySalesAmount.toFixed(2) ?? '0.00'}`}
@@ -181,7 +181,7 @@ export default function Dashboard() {
         </div>
 
         {/* Sales Chart */}
-        {role !== 'ipp' && role !== 'dispensary' && (
+        {role !== 'ipp' && role !== 'dispensary' && role !== 'store_officer' && (
           <div className="mb-8">
             <SalesChart
               data={stats?.salesData ?? []}
@@ -191,7 +191,7 @@ export default function Dashboard() {
         )}
 
         {/* Quick Stats Summary */}
-        {role !== 'ipp' && role !== 'dispensary' && (
+        {role !== 'ipp' && role !== 'dispensary' && role !== 'store_officer' && (
           <div className="bg-white rounded-lg shadow p-4 sm:p-6">
             <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4">Quick Summary</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">

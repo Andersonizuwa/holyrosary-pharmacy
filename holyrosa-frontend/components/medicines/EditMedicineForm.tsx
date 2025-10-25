@@ -10,7 +10,7 @@ interface FormData {
   genericName: string;
   manufacturingDate: string;
   expiryDate: string;
-  packageType: 'Tablet' | 'Syrup' | 'Injection' | 'Cream' | 'Others';
+  packageType: string;
   quantity: number;
   buyPrice: number;
   totalPrice: number;
@@ -40,7 +40,7 @@ export const EditMedicineForm: React.FC<EditMedicineFormProps> = ({ medicineId }
     genericName: '',
     manufacturingDate: '',
     expiryDate: '',
-    packageType: 'Tablet',
+    packageType: '',
     quantity: 0,
     buyPrice: 0,
     totalPrice: 0,
@@ -127,6 +127,7 @@ export const EditMedicineForm: React.FC<EditMedicineFormProps> = ({ medicineId }
 
     if (!formData.name.trim()) newErrors.name = 'Medicine name is required';
     if (!formData.genericName.trim()) newErrors.genericName = 'Generic name is required';
+    if (!formData.packageType.trim()) newErrors.packageType = 'Package type is required';
     if (!formData.manufacturingDate)
       newErrors.manufacturingDate = 'Manufacturing date is required';
     if (!formData.expiryDate) newErrors.expiryDate = 'Expiry date is required';
@@ -300,18 +301,19 @@ export const EditMedicineForm: React.FC<EditMedicineFormProps> = ({ medicineId }
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Package Type
             </label>
-            <select
+            <input
+              type="text"
               name="packageType"
               value={formData.packageType}
               onChange={handleInputChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="Tablet">Tablet</option>
-              <option value="Syrup">Syrup</option>
-              <option value="Injection">Injection</option>
-              <option value="Cream">Cream</option>
-              <option value="Others">Others</option>
-            </select>
+              placeholder="e.g., Tablet, Syrup, Injection, Cream"
+              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                errors.packageType ? 'border-red-500' : 'border-gray-300'
+              }`}
+            />
+            {errors.packageType && (
+              <p className="text-red-600 text-xs mt-1">{errors.packageType}</p>
+            )}
           </div>
 
           {/* Manufacturing Date */}

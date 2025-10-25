@@ -107,6 +107,9 @@ export const ReportsTable: React.FC<ReportsTableProps> = ({
                     Sold By
                   </th>
                   <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+                    Unit
+                  </th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
                     Medicine
                   </th>
                   <th className="px-6 py-3 text-center text-sm font-semibold text-gray-900">
@@ -114,6 +117,9 @@ export const ReportsTable: React.FC<ReportsTableProps> = ({
                   </th>
                   <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
                     Date/Time
+                  </th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+                    Status
                   </th>
                   <th className="px-6 py-3 text-right text-sm font-semibold text-gray-900">
                     Amount (₦)
@@ -145,6 +151,15 @@ export const ReportsTable: React.FC<ReportsTableProps> = ({
                       )}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-700">
+                      <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
+                        sale.unit === 'N/A' 
+                          ? 'bg-gray-100 text-gray-500' 
+                          : 'bg-green-100 text-green-800'
+                      }`}>
+                        {sale.unit}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-700">
                       {sale.medicineName}
                     </td>
                     <td className="px-6 py-4 text-center text-sm">
@@ -154,6 +169,15 @@ export const ReportsTable: React.FC<ReportsTableProps> = ({
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-700">
                       {formatDate(sale.saleDate)}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
+                        sale.status === 'returned'
+                          ? 'bg-red-100 text-red-800'
+                          : 'bg-green-100 text-green-800'
+                      }`}>
+                        {sale.status === 'returned' ? 'Returned' : 'Completed'}
+                      </span>
                     </td>
                     <td className="px-6 py-4 text-right font-bold text-green-600">
                       {formatCurrency(sale.totalPrice)}
@@ -200,6 +224,16 @@ export const ReportsTable: React.FC<ReportsTableProps> = ({
                         <span className="font-medium text-gray-900">{sale.medicineName}</span>
                       </div>
                       <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Unit:</span>
+                        <span className={`font-medium ${
+                          sale.unit === 'N/A' 
+                            ? 'text-gray-400 italic' 
+                            : 'text-gray-900'
+                        }`}>
+                          {sale.unit}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-sm">
                         <span className="text-gray-600">Quantity:</span>
                         <span className="font-medium text-gray-900">{sale.quantity}x</span>
                       </div>
@@ -207,8 +241,18 @@ export const ReportsTable: React.FC<ReportsTableProps> = ({
                         <span className="text-gray-600">Unit Price:</span>
                         <span className="font-medium text-gray-900">{formatCurrency(sale.sellingPrice)}</span>
                       </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Subtotal:</span>
+                        <span className="font-medium text-gray-900">{formatCurrency(sale.quantity * sale.sellingPrice)}</span>
+                      </div>
+                      {sale.discount > 0 && (
+                        <div className="flex justify-between text-sm text-orange-600 font-semibold">
+                          <span>Discount Applied:</span>
+                          <span>-{formatCurrency(sale.discount)}</span>
+                        </div>
+                      )}
                       <div className="flex justify-between text-sm font-semibold text-green-600 pt-2 border-t border-gray-200">
-                        <span>Total:</span>
+                        <span>Amount Paid:</span>
                         <span>{formatCurrency(sale.totalPrice)}</span>
                       </div>
                     </div>

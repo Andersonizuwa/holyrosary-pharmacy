@@ -77,9 +77,9 @@ export const createDelegation = async (req, res) => {
     try {
       const queryResult = await connection.query(
         `INSERT INTO delegations 
-         (medicine_id, delegated_by, delegated_to, quantity, generic_name, delegation_date, created_at) 
-         VALUES (?, ?, ?, ?, ?, ?, NOW())`,
-        [medicineId, req.user?.id || null, delegatedTo, parsedQuantity, genericName || null, delegationDate || null]
+         (medicine_id, delegated_by, delegated_to, quantity, original_quantity, generic_name, delegation_date, created_at) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, NOW())`,
+        [medicineId, req.user?.id || null, delegatedTo, parsedQuantity, parsedQuantity, genericName || null, delegationDate || null]
       );
       result = queryResult[0];
       console.log('✅ Delegation created with ID:', result.insertId);
@@ -165,12 +165,19 @@ export const getDelegations = async (req, res) => {
     const [countRows] = await connection.query('SELECT COUNT(*) as total FROM delegations');
     const total = countRows[0].total;
 
-    // Get paginated delegations with medicine details
+    // Get paginated delegations with medicine details and calculate remaining quantities
+    // Use COALESCE to handle migrations - if original_quantity is NULL, use quantity
+    // LEFT JOIN with sales to calculate how much has been sold
     const [delegations] = await connection.query(
-      `SELECT d.id, d.medicine_id, d.delegated_by, d.delegated_to, d.quantity, d.generic_name, d.delegation_date, d.created_at,
-              m.name, m.barcode, m.expiry_date, m.selling_price
+      `SELECT d.id, d.medicine_id, d.delegated_by, d.delegated_to, d.quantity, 
+              COALESCE(d.original_quantity, d.quantity) as original_quantity,
+              d.generic_name, d.delegation_date, d.created_at,
+              m.name, m.barcode, m.expiry_date, m.selling_price,
+              COALESCE(SUM(CASE WHEN s.status = 'completed' THEN s.quantity ELSE 0 END), 0) as sold_quantity
        FROM delegations d
        LEFT JOIN medicines m ON d.medicine_id = m.id
+       LEFT JOIN sales s ON d.medicine_id = s.medicine_id
+       GROUP BY d.id
        ORDER BY d.created_at DESC 
        LIMIT ? OFFSET ?`,
       [limit, offset]
@@ -179,20 +186,27 @@ export const getDelegations = async (req, res) => {
     connection.release();
 
     // Convert snake_case to camelCase for frontend
-    const formattedDelegations = delegations.map(d => ({
-      id: d.id,
-      medicineId: d.medicine_id,
-      medicineName: d.name,
-      genericName: d.generic_name,
-      quantity: d.quantity,
-      fromUserId: d.delegated_by,
-      toRole: d.delegated_to,
-      expiryDate: d.expiry_date,
-      delegationDate: d.delegation_date,
-      createdAt: d.created_at,
-      barcode: d.barcode,
-      sellingPrice: Number(d.selling_price) || 0
-    }));
+    // Calculate remaining quantity for real-time availability
+    const formattedDelegations = delegations.map(d => {
+      const remainingQuantity = Math.max(0, d.original_quantity - d.sold_quantity);
+      return {
+        id: d.id,
+        medicineId: d.medicine_id,
+        medicineName: d.name,
+        genericName: d.generic_name,
+        quantity: d.original_quantity, // Show original delegated quantity in history
+        remainingQuantity: remainingQuantity, // Available quantity after sales
+        originalQuantity: d.original_quantity,
+        soldQuantity: d.sold_quantity,
+        fromUserId: d.delegated_by,
+        toRole: d.delegated_to,
+        expiryDate: d.expiry_date,
+        delegationDate: d.delegation_date,
+        createdAt: d.created_at,
+        barcode: d.barcode,
+        sellingPrice: Number(d.selling_price) || 0
+      };
+    });
 
     res.json({
       items: formattedDelegations,
@@ -369,13 +383,10 @@ export const restoreDelegations = async (req, res) => {
 
       const delegationId = delegationRows[0].id;
 
-      // Restore quantity in delegations table ONLY
-      // (The stock comes from the delegation, so it returns to the delegation)
-      console.log(`📝 Restoring quantity in delegations for ID: ${delegationId}`);
-      await connection.query(
-        'UPDATE delegations SET quantity = quantity + ? WHERE id = ?',
-        [quantity, delegationId]
-      );
+      // NOTE: We do NOT update delegations.quantity anymore
+      // The original_quantity field preserves the historical delegated amount (immutable)
+      // Sales/returns are tracked separately in the sales table with status and returned_quantity
+      // This ensures the delegated medicines history page shows the original delegated amount
 
       // Find the most recent sale for this medicine and mark it as returned
       console.log(`📝 Finding most recent sale for medicine ID: ${medicineId}`);

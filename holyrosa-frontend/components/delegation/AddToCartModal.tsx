@@ -10,21 +10,23 @@ interface AddToCartModalProps {
 }
 
 export const AddToCartModal: React.FC<AddToCartModalProps> = ({ medicine, onClose }) => {
-  const [quantity, setQuantity] = useState(1);
+  const [quantity, setQuantity] = useState('');
   const [error, setError] = useState('');
+  const [isTouched, setIsTouched] = useState(false);
   const { addToCart } = useDelegationCart();
 
   const handleAddToCart = () => {
-    if (quantity <= 0) {
+    const qty = parseInt(quantity) || 0;
+    if (qty <= 0) {
       setError('Quantity must be greater than 0');
       return;
     }
-    if (quantity > medicine.quantity) {
+    if (qty > medicine.quantity) {
       setError(`Cannot delegate more than ${medicine.quantity} units available`);
       return;
     }
 
-    addToCart(medicine, quantity);
+    addToCart(medicine, qty);
     onClose();
   };
 
@@ -62,15 +64,16 @@ export const AddToCartModal: React.FC<AddToCartModalProps> = ({ medicine, onClos
               Quantity to Add
             </label>
             <input
-              type="number"
+              type="text"
+              inputMode="numeric"
               value={quantity}
               onChange={(e) => {
-                const val = parseInt(e.target.value) || 0;
+                const val = e.target.value.replace(/\D/g, '');
                 setQuantity(val);
                 setError('');
               }}
-              min="1"
-              max={medicine.quantity}
+              onFocus={() => setIsTouched(true)}
+              placeholder="Enter quantity"
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <p className="text-xs text-gray-500 mt-1">
