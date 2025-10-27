@@ -98,9 +98,6 @@ export const ReportsTable: React.FC<ReportsTableProps> = ({
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
                   <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
-                    Invoice No
-                  </th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
                     Patient Name
                   </th>
                   <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
@@ -129,9 +126,6 @@ export const ReportsTable: React.FC<ReportsTableProps> = ({
               <tbody className="divide-y divide-gray-200">
                 {sales.map((sale) => (
                   <tr key={sale.id} className="hover:bg-gray-50 transition">
-                    <td className="px-6 py-4">
-                      <span className="font-mono text-xs text-gray-600">{sale.invoiceNo}</span>
-                    </td>
                     <td className="px-6 py-4 text-sm text-gray-700 font-medium">
                       {sale.patientName}
                     </td>
@@ -198,7 +192,6 @@ export const ReportsTable: React.FC<ReportsTableProps> = ({
                 {sales.map((sale) => (
                   <div key={sale.id} className="bg-white p-4 rounded border border-gray-200">
                     <div className="mb-3 pb-3 border-b border-gray-200">
-                      <p className="text-xs text-gray-600">Invoice: <span className="font-mono font-semibold">{sale.invoiceNo}</span></p>
                       <p className="text-sm font-semibold text-gray-900">{sale.patientName}</p>
                       <p className="text-xs text-gray-500">{sale.folderNo && `Folder: ${sale.folderNo}`}</p>
                       <p className="text-xs text-gray-600 mt-2">

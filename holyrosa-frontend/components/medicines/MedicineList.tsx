@@ -34,7 +34,8 @@ export const MedicineList: React.FC<MedicineListProps> = ({ medicines: initialMe
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, medicineId: null as string | number | null, medicineName: '' });
   const [isDeleting, setIsDeleting] = useState(false);
   
-  const canAdd = user ? canManageMedicines(user.role) : false;
+  // Admin can only view, not manage
+  const canAdd = user ? (user.role !== 'admin' && canManageMedicines(user.role)) : false;
 
   // Filter medicines based on search term
   const filteredMedicines = useMemo(() => {

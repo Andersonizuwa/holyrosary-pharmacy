@@ -149,9 +149,6 @@ export const DelegateHistory: React.FC<DelegateHistoryProps> = ({ delegations })
               <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
                 Date
               </th>
-              <th className="px-6 py-3 text-center text-sm font-semibold text-gray-900">
-                Status
-              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
@@ -189,20 +186,11 @@ export const DelegateHistory: React.FC<DelegateHistoryProps> = ({ delegations })
                       Delegated: {formatTime(delegation.createdAt)}
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-center">
-                    <span
-                      className={`inline-block px-3 py-1 rounded-full text-xs font-medium capitalize ${getStatusBadgeColor(
-                        delegation.status
-                      )}`}
-                    >
-                      {delegation.status}
-                    </span>
-                  </td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
+                <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
                   No delegations found.
                 </td>
               </tr>
@@ -216,18 +204,9 @@ export const DelegateHistory: React.FC<DelegateHistoryProps> = ({ delegations })
         {filteredDelegations.length > 0 ? (
           filteredDelegations.map((delegation) => (
             <div key={delegation.id} className="bg-white rounded-lg border border-gray-200 p-4 space-y-3">
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900">{delegation.medicineName}</h3>
-                  <p className="text-sm text-gray-600">{delegation.genericName}</p>
-                </div>
-                <span
-                  className={`inline-block px-2 py-1 rounded-full text-xs font-medium capitalize ${getStatusBadgeColor(
-                    delegation.status
-                  )}`}
-                >
-                  {delegation.status}
-                </span>
+              <div className="flex-1">
+                <h3 className="font-semibold text-gray-900">{delegation.medicineName}</h3>
+                <p className="text-sm text-gray-600">{delegation.genericName}</p>
               </div>
 
               <div className="grid grid-cols-2 gap-3 text-sm">

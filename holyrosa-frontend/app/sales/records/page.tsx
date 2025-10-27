@@ -62,6 +62,9 @@ export default function SalesRecordsPage() {
     type: 'success' | 'error';
     message: string;
   } | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
 
   // Load sales from API on component mount
   useEffect(() => {
@@ -95,6 +98,22 @@ export default function SalesRecordsPage() {
     }
   }, [notification]);
 
+  // Filter sales based on search and date range
+  const filteredSales = React.useMemo(() => {
+    return sales.filter(sale => {
+      // Search filter - by patient name or folder number
+      const searchMatch = !searchTerm || 
+        sale.patientName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        sale.folderNo?.toLowerCase().includes(searchTerm.toLowerCase());
+
+      // Date range filter
+      const saleDate = new Date(sale.createdAt).toISOString().split('T')[0];
+      const dateMatch = (!dateFrom || saleDate >= dateFrom) && (!dateTo || saleDate <= dateTo);
+
+      return searchMatch && dateMatch;
+    });
+  }, [sales, searchTerm, dateFrom, dateTo]);
+
 
 
   const handleDeleteSale = async (
@@ -103,7 +122,13 @@ export default function SalesRecordsPage() {
     returnQuantities?: { medicineId: string; quantity: number }[]
   ) => {
     try {
-      const saleToDelete = sales[index];
+      const saleToDelete = filteredSales[index];
+      // Find the actual index in the full sales array
+      const actualIndex = sales.findIndex(s => 
+        s.id === saleToDelete.id && 
+        s.patientName === saleToDelete.patientName &&
+        s.createdAt === saleToDelete.createdAt
+      );
 
       // Return: restore selected medicine quantities to delegations
       const quantitiesToReturn = returnQuantities || saleToDelete.medicines.map((med) => ({
@@ -132,7 +157,7 @@ export default function SalesRecordsPage() {
 
         if (isFullReturn) {
           // Full return: remove entire sale record
-          newSales = sales.filter((_, i) => i !== index);
+          newSales = sales.filter((_, i) => i !== actualIndex);
           returnMsg = `✅ Sale reversed! ${totalReturned} unit(s) returned to stock.`;
         } else {
           // Partial return: update sale with remaining quantities
@@ -162,7 +187,7 @@ export default function SalesRecordsPage() {
             totalAmount: newTotalAmount,
           };
           
-          newSales = sales.map((sale, i) => (i === index ? updatedSale : sale));
+          newSales = sales.map((sale, i) => (i === actualIndex ? updatedSale : sale));
           returnMsg = `✅ Partial return processed! ${totalReturned} out of ${totalOriginal} unit(s) returned to stock.`;
         }
 
@@ -305,9 +330,63 @@ export default function SalesRecordsPage() {
             </div>
           )}
 
+          {/* Search and Filter Section - For IPP and Dispensary */}
+          {(user?.role === 'ipp' || user?.role === 'dispensary') && (
+            <div className="mb-6 bg-white rounded-lg shadow p-4 md:p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">🔍 Search & Filter</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Search by Patient Name */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Search Patient Name
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Search by patient name or folder no..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                {/* Date From */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    From Date
+                  </label>
+                  <input
+                    type="date"
+                    value={dateFrom}
+                    onChange={(e) => setDateFrom(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                {/* Date To */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    To Date
+                  </label>
+                  <input
+                    type="date"
+                    value={dateTo}
+                    onChange={(e) => setDateTo(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              {/* Results count */}
+              <div className="mt-4 text-sm text-gray-600">
+                Showing <span className="font-semibold">{filteredSales.length}</span> of{' '}
+                <span className="font-semibold">{sales.length}</span> sales
+              </div>
+            </div>
+          )}
+
           {/* Sales Table Section */}
           <div className="mt-8">
-            <SalesTable sales={sales} onDelete={handleDeleteSale} />
+            <SalesTable sales={filteredSales} onDelete={handleDeleteSale} />
           </div>
         </div>
       </div>
