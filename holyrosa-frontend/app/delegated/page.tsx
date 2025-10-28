@@ -232,10 +232,10 @@ export default function DelegatedPage() {
                           </div>
                         </td>
                         <td className="px-6 py-4 text-gray-700">
-                          {formatDate(delegation.expiryDate)}
+                          {formatDate(delegation.expiryDate || new Date().toISOString())}
                         </td>
                         <td className="px-6 py-4 text-gray-700">
-                          {formatDate(delegation.delegatedDate || new Date().toISOString())}
+                          {formatDate(delegation.delegationDate || new Date().toISOString())}
                         </td>
                       </tr>
                     );
