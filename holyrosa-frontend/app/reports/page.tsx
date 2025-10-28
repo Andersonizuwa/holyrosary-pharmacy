@@ -131,8 +131,8 @@ export default function ReportsPage() {
   };
 
   const handleExportCSV = () => {
-    if (!reportData) return;
-    exportSalesReport(reportData, dateFrom, dateTo);
+    if (!reportData || !reportData.items || !reportData.totals) return;
+    exportSalesReport(reportData as any, dateFrom, dateTo);
   };
 
   return (
