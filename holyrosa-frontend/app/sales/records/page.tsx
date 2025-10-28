@@ -33,7 +33,6 @@ const groupSalesByTransaction = (items: any[]): RecordedSale[] => {
         discountPercentage: item.discount || 0,
         totalAmount: 0,
         createdAt: item.saleDate,
-        status: item.status,
       });
     }
 
