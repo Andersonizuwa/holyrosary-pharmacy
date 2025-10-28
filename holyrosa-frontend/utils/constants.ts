@@ -1,7 +1,7 @@
 export const ROLES = {
   SUPERADMIN: 'superadmin',
   ADMIN: 'admin',
-  STORE_OFFICER: 'storeofficer',
+  STORE_OFFICER: 'store_officer',
   IPP: 'ipp',
   DISPENSARY: 'dispensary',
 } as const;
@@ -9,7 +9,7 @@ export const ROLES = {
 export const ROLE_LABELS = {
   superadmin: 'Super Admin',
   admin: 'Admin',
-  storeofficer: 'Store Officer',
+  store_officer: 'Store Officer',
   ipp: 'IPP',
   dispensary: 'Dispensary',
 } as const;
