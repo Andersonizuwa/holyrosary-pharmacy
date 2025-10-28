@@ -4,12 +4,32 @@ import React, { useState, useEffect } from 'react';
 import { AppShell } from '@/components/ui/AppShell';
 import { ReportsTable } from '@/components/reports/ReportsTable';
 import { useAuth } from '@/context/AuthContext';
-import { Sale } from '@/types';
 import { exportSalesReport } from '@/lib/csv';
 import { canViewReports } from '@/utils/roles';
 
+interface SaleRecord {
+  id: number;
+  patientName: string;
+  folderNo: string;
+  age: number;
+  sex: string;
+  phoneNumber?: string;
+  invoiceNo: string;
+  unit: string;
+  medicineId: string;
+  medicineName: string;
+  quantity: number;
+  sellingPrice: number;
+  discount: number;
+  totalPrice: number;
+  saleDate: string;
+  barcode?: string;
+  soldByRole: string;
+  soldByName: string;
+}
+
 interface ReportData {
-  items?: Sale[];
+  items?: SaleRecord[];
   totals?: {
     revenue: number;
     itemsSold: number;
@@ -132,7 +152,7 @@ export default function ReportsPage() {
 
   const handleExportCSV = () => {
     if (!reportData || !reportData.items || !reportData.totals) return;
-    exportSalesReport(reportData as any, dateFrom, dateTo);
+    exportSalesReport({ items: reportData.items, totals: reportData.totals }, dateFrom, dateTo);
   };
 
   return (
