@@ -74,7 +74,7 @@ export default function UsersPage() {
         <div className="p-4 md:p-8">
           <div className="bg-red-50 border border-red-200 rounded-lg p-8 text-center">
             <p className="text-red-800 text-lg font-medium">Access Denied</p>
-            <p className="text-red-600 mt-2">You don't have permission to view users.</p>
+            <p className="text-red-600 mt-2">You don&apos;t have permission to view users.</p>
           </div>
         </div>
       </AppShell>

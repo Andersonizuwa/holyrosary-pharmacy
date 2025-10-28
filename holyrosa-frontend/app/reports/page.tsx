@@ -45,7 +45,7 @@ export default function ReportsPage() {
         <div className="p-4 md:p-8">
           <div className="bg-red-50 border border-red-200 rounded-lg p-8 text-center">
             <p className="text-red-800 text-lg font-medium">Access Denied</p>
-            <p className="text-red-600 mt-2">You don't have permission to view reports.</p>
+            <p className="text-red-600 mt-2">You don&apos;t have permission to view reports.</p>
           </div>
         </div>
       </AppShell>
@@ -246,7 +246,7 @@ export default function ReportsPage() {
         ) : submitted && !loading ? (
           <div className="bg-white rounded-lg shadow p-12 text-center">
             <p className="text-gray-500 text-lg">No data to display</p>
-            <p className="text-gray-400 mt-2">Select a date range and click "Generate Report"</p>
+            <p className="text-gray-400 mt-2">Select a date range and click &quot;Generate Report&quot;</p>
           </div>
         ) : null}
       </div>

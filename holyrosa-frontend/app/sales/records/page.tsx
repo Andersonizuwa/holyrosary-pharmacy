@@ -281,7 +281,7 @@ export default function SalesRecordsPage() {
           <div className="text-4xl mb-4">🔒</div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h1>
           <p className="text-gray-600">
-            You don't have permission to access the Sales Records page.
+            You don&apos;t have permission to access the Sales Records page.
           </p>
         </div>
       </div>

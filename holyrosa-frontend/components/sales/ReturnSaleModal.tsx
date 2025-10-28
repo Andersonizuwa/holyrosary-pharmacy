@@ -29,7 +29,7 @@ export const ReturnSaleModal: React.FC<ReturnSaleModalProps> = ({
       });
       setReturnQuantities(initialized);
     }
-  }, [isOpen, sale?.medicines, returnQuantities]);
+  }, [isOpen, sale]);
 
   const totalQty = sale?.medicines.reduce((sum, med) => sum + med.quantity, 0) || 0;
   const totalReturnQty = useMemo(

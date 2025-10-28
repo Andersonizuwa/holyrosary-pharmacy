@@ -1,4 +1,5 @@
 // app/login/page.tsx - Login page using the reusable LoginForm component
+import Image from 'next/image';
 import LoginForm from '@/components/auth/LoginForm';
 
 export default function Login() {
@@ -14,7 +15,7 @@ export default function Login() {
         <div className="bg-white rounded-lg shadow-xl p-8">
           {/* Logo and Title */}
           <div className="text-center">
-            <img src="/logo.svg" alt="Holy Rosary Logo" className="mx-auto h-12 w-12 mb-4" />
+            <Image src="/logo.svg" alt="Holy Rosary Logo" width={48} height={48} className="mx-auto mb-4" />
             <h2 className="text-3xl font-bold text-gray-900">
               Welcome Back
             </h2>

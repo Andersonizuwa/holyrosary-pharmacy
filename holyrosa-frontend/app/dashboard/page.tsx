@@ -64,7 +64,7 @@ export default function Dashboard() {
             Welcome back, {user?.name}!
           </h1>
           <p className="text-sm sm:text-base text-gray-600">
-            Here's what's happening in your pharmacy today.
+            Here&apos;s what&apos;s happening in your pharmacy today.
           </p>
         </div>
 

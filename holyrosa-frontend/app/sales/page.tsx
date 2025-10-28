@@ -269,7 +269,7 @@ export default function SalesPage() {
           <div className="text-4xl mb-4">🔒</div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h1>
           <p className="text-gray-600">
-            You don't have permission to access the Sales page. This page is available only for IPP and Dispensary staff.
+            You don&apos;t have permission to access the Sales page. This page is available only for IPP and Dispensary staff.
           </p>
         </div>
       </div>
@@ -284,7 +284,7 @@ export default function SalesPage() {
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-2">💊 Sales Management</h1>
           <p className="text-gray-600">
-            Record and track medicine sales by patient and unit. All sales are automatically discounted based on the patient's unit.
+            Record and track medicine sales by patient and unit. All sales are automatically discounted based on the patient&apos;s unit.
           </p>
           {user && (
             <p className="text-sm text-gray-500 mt-2">

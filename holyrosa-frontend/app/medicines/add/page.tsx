@@ -37,7 +37,7 @@ export default function AddMedicinePage() {
             <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
               <h2 className="text-xl font-bold text-red-800 mb-2">Access Denied</h2>
               <p className="text-red-700 mb-4">
-                You don't have permission to add medicines. This action is only available for Store Officers and Administrators.
+                You don&apos;t have permission to add medicines. This action is only available for Store Officers and Administrators.
               </p>
               <Link
                 href="/medicines"
