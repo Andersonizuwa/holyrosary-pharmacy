@@ -276,13 +276,13 @@ export default function DelegatedPage() {
                       <div>
                         <p className="text-gray-600">Expiry Date</p>
                         <p className="font-semibold text-gray-900">
-                          {formatDate(delegation.expiryDate)}
+                          {formatDate(delegation.expiryDate || new Date().toISOString())}
                         </p>
                       </div>
                       <div className="col-span-2">
                         <p className="text-gray-600">Delegated Date</p>
                         <p className="font-semibold text-gray-900">
-                          {formatDate(delegation.delegatedDate || new Date().toISOString())}
+                          {formatDate(delegation.delegationDate || new Date().toISOString())}
                         </p>
                       </div>
                     </div>
