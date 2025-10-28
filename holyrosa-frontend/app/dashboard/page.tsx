@@ -230,7 +230,7 @@ export default function Dashboard() {
                   <div className="w-3 h-3 bg-indigo-500 rounded-full"></div>
                 </div>
                 <div className="ml-3">
-                  <p className="text-xs sm:text-sm text-gray-600">Today's Revenue</p>
+                  <p className="text-xs sm:text-sm text-gray-600">Today&apos;s Revenue</p>
                   <p className="text-base sm:text-lg font-semibold text-gray-900">
                     ₦{stats?.todaySalesAmount.toFixed(2) ?? '0.00'}
                   </p>
