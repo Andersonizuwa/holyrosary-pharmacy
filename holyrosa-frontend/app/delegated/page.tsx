@@ -81,7 +81,7 @@ export default function DelegatedPage() {
     // Date range filter
     if (dateFrom || dateTo) {
       filtered = filtered.filter((d: Delegation) => {
-        const delegationDate = new Date(d.delegatedDate || new Date()).toISOString().split('T')[0];
+        const delegationDate = new Date(d.delegationDate || new Date()).toISOString().split('T')[0];
         
         if (dateFrom && dateTo) {
           return delegationDate >= dateFrom && delegationDate <= dateTo;
