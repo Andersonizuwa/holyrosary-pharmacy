@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Medicine } from '@/types';
 import api from '@/lib/api';
 
@@ -30,6 +31,7 @@ interface AddMedicineFormProps {
  * - Success message on submission
  */
 export const AddMedicineForm: React.FC<AddMedicineFormProps> = ({ onSuccess }) => {
+  const router = useRouter();
   const [successMessage, setSuccessMessage] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);

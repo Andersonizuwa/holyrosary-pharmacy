@@ -11,7 +11,7 @@ interface DelegationFormProps {
 
 interface FormData {
   quantityToDelegated: number;
-  delegateTo: 'ipp' | 'dispensary' | 'others';
+  delegateTo: 'ipp' | 'dispensary' | 'other';
   delegationDate: string;
   remarks: string;
 }
@@ -267,7 +267,7 @@ export const DelegationForm: React.FC<DelegationFormProps> = ({
                   <option value="">-- Select --</option>
                   <option value="ipp">IPP (Integrated Pharmacy Partner)</option>
                   <option value="dispensary">Dispensary</option>
-                  <option value="others">Others</option>
+                  <option value="other">Others</option>
                 </select>
                 {errors.delegateTo && (
                   <p className="text-red-600 text-xs mt-1">{errors.delegateTo}</p>

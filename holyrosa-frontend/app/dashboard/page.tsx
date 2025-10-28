@@ -218,7 +218,7 @@ export default function Dashboard() {
                     <p className="text-xs sm:text-sm text-gray-600">Availability</p>
                     <p className="text-base sm:text-lg font-semibold text-gray-900">
                       {stats?.totalMedicines ? 
-                        `${((stats.inStock / stats.totalMedicines) * 100).toFixed(0)}%` 
+                        `${(((stats?.inStock ?? 0) / stats.totalMedicines) * 100).toFixed(0)}%` 
                         : '0%'}
                     </p>
                   </div>
