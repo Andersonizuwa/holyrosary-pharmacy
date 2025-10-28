@@ -313,7 +313,7 @@ export const DelegationForm: React.FC<DelegationFormProps> = ({
             {formData.quantityToDelegated > 0 && (
               <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                 <p className="text-sm text-gray-700">
-                  <span className="font-medium">Summary:</span> You're delegating{' '}
+                  <span className="font-medium">Summary:</span> You&apos;re delegating{' '}
                   <span className="font-semibold text-green-700">{formData.quantityToDelegated}</span>{' '}
                   unit(s) of <span className="font-semibold">{medicine.name}</span> to{' '}
                   <span className="font-semibold text-blue-700 capitalize">

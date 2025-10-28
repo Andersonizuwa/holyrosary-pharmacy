@@ -1,5 +1,6 @@
 // components/Header.tsx - Site header with navigation and branding
 import Link from 'next/link';
+import Image from 'next/image';
 import { useAuth } from '@/context/AuthContext';
 
 export default function Header() {
@@ -11,7 +12,7 @@ export default function Header() {
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2">
-            <img src="/logo.svg" alt="Holy Rosary Logo" className="h-10 w-10" />
+            <Image src="/logo.svg" alt="Holy Rosary Logo" width={40} height={40} />
             <span className="text-xl font-bold text-gray-900">Holy Rosary Pharmacy</span>
           </Link>
 
