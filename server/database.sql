@@ -53,6 +53,7 @@ CREATE TABLE IF NOT EXISTS delegations (
   delegated_by INT,
   delegated_to ENUM('ipp', 'dispensary', 'other') NOT NULL,
   quantity INT NOT NULL,
+  original_quantity INT NOT NULL DEFAULT 0,
   generic_name VARCHAR(255),
   delegation_date DATE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -132,11 +133,11 @@ CREATE TABLE IF NOT EXISTS delegation_notifications (
 
 -- Test Users (passwords are bcrypt hashed - replace with actual hashed values)
 INSERT INTO users (name, email, password, role) VALUES
-('Super Admin', 'superadmin@holyrosa.ng', '$2a$12$GFv649no1KWhPfhLUAnApeflQNmHsfHPofxNfl0Q1nMg8Jgk/YqKC', 'superadmin'),
-('Admin User', 'admin@holyrosa.ng', '$2a$12$GFv649no1KWhPfhLUAnApeflQNmHsfHPofxNfl0Q1nMg8Jgk/YqKC', 'admin'),
-('Store Officer', 'storeofficer@holyrosa.ng', '$2a$12$GFv649no1KWhPfhLUAnApeflQNmHsfHPofxNfl0Q1nMg8Jgk/YqKC', 'store_officer'),
-('IPP Staff', 'ipp@holyrosa.ng', '$2a$12$GFv649no1KWhPfhLUAnApeflQNmHsfHPofxNfl0Q1nMg8Jgk/YqKC', 'ipp'),
-('Dispensary Staff', 'dispensary@holyrosa.ng', '$2a$12$GFv649no1KWhPfhLUAnApeflQNmHsfHPofxNfl0Q1nMg8Jgk/YqKC', 'dispensary');
+('Super Admin', 'superadmin@holyrosa.ng', '$2a$12$V2UMmXQQgVl2ZAlVp8b64.SjwsrLRdz6TUIj7LbaJ7QGvmi3JgfNe', 'superadmin'),
+('Admin User', 'admin@holyrosa.ng', '$2a$12$V2UMmXQQgVl2ZAlVp8b64.SjwsrLRdz6TUIj7LbaJ7QGvmi3JgfNe', 'admin'),
+('Store Officer', 'storeofficer@holyrosa.ng', '$2a$12$V2UMmXQQgVl2ZAlVp8b64.SjwsrLRdz6TUIj7LbaJ7QGvmi3JgfNe', 'store_officer'),
+('IPP Staff', 'ipp@holyrosa.ng', '$2a$12$V2UMmXQQgVl2ZAlVp8b64.SjwsrLRdz6TUIj7LbaJ7QGvmi3JgfNe', 'ipp'),
+('Dispensary Staff', 'dispensary@holyrosa.ng', '$2a$12$V2UMmXQQgVl2ZAlVp8b64.SjwsrLRdz6TUIj7LbaJ7QGvmi3JgfNe', 'dispensary');
 
 -- Test Medicines
 INSERT INTO medicines (barcode, name, generic_name, package_type, quantity, buy_price, selling_price, manufacturing_date, expiry_date, low_stock_threshold, created_by) VALUES

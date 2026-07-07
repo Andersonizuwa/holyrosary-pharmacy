@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { Invoice } from '@/components/sales/Invoice';
 import { useRouter, useSearchParams } from 'next/navigation';
 
@@ -31,7 +31,7 @@ interface InvoiceData {
   dispensedBy?: string;
 }
 
-export default function InvoicePage() {
+function InvoiceContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [invoiceData, setInvoiceData] = useState<InvoiceData | null>(null);
@@ -110,5 +110,20 @@ export default function InvoicePage() {
         />
       </div>
     </div>
+  );
+}
+
+export default function InvoicePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <p className="mt-4 text-gray-600">Loading invoice...</p>
+        </div>
+      </div>
+    }>
+      <InvoiceContent />
+    </Suspense>
   );
 }

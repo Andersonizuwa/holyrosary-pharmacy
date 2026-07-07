@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { AppShell } from '@/components/ui/AppShell';
 import { useAuth } from '@/context/AuthContext';
 import { Delegation } from '@/types';
+import api from '@/lib/api';
 
 /**
  * Delegated Medicines Page - For IPP and Dispensary
@@ -26,23 +27,14 @@ export default function DelegatedPage() {
     const fetchDelegations = async () => {
       try {
         setLoading(true);
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-        const token = typeof window !== 'undefined' ? localStorage.getItem('holyrosa_token') : null;
+        setError('');
 
-        const headers = {
-          'Content-Type': 'application/json',
-          ...(token && { Authorization: `Bearer ${token}` })
-        };
+        const response = await api.get('/delegations', {
+          params: { page: 1, limit: 500 },
+        });
 
-        const response = await fetch(`${apiUrl}/delegations`, { headers });
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch delegations');
-        }
-
-        const data = await response.json();
-        // Backend returns { items: [], total, page, limit, pages }
-        const delegationsList = data.items || [];
+        const data = response.data;
+        const delegationsList = data.items || data.data || [];
 
         // Filter by current user's role (ipp or dispensary)
         const userDelegations = delegationsList.filter(

@@ -136,12 +136,18 @@ export const DelegationCheckout: React.FC<DelegationCheckoutProps> = ({ onClose 
 
     try {
       // Prepare delegations for API
-      const delegations = [];
+      const delegations: Array<{
+        medicineId: number;
+        quantity: number;
+        delegatedTo: string;
+        delegationDate: string;
+        genericName: string;
+      }> = [];
       checkoutItems.forEach((item) => {
         item.delegations.forEach((d) => {
           delegations.push({
             medicineId: parseInt(item.medicineId, 10),
-            quantity: parseInt(d.quantity, 10) || 0,
+            quantity: Number(d.quantity) || 0,
             delegatedTo: d.delegateTo,
             delegationDate: d.delegationDate,
             genericName: item.genericName,

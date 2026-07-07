@@ -22,6 +22,7 @@ interface SaleRecord {
   barcode?: string;
   soldByRole: string;
   soldByName: string;
+  status?: 'completed' | 'returned' | 'partial_return';
 }
 
 interface ReportsTableProps {

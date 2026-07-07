@@ -42,7 +42,7 @@ const groupSalesByTransaction = (items: any[]): RecordedSale[] => {
       medicineName: item.medicineName,
       quantity: item.quantity,
       sellingPrice: item.sellingPrice,
-      barcode: item.barcode,
+      total: item.totalPrice,
     });
     
     // Update total amount
@@ -55,7 +55,7 @@ const groupSalesByTransaction = (items: any[]): RecordedSale[] => {
 export default function SalesRecordsPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
-  const [sales, setSales] = useState<any[]>([]);
+  const [sales, setSales] = useState<RecordedSale[]>([]);
   const [isLoadingSales, setIsLoadingSales] = useState(true);
   const [notification, setNotification] = useState<{
     type: 'success' | 'error';
@@ -164,12 +164,12 @@ export default function SalesRecordsPage() {
           const remainingMedicines = saleToDelete.medicines
             .map(med => ({
               ...med,
-              quantity: med.quantity - (returnMap.get(med.medicineId) || 0),
+              quantity: Number(med.quantity) - (returnMap.get(med.medicineId) || 0),
             }))
             .filter(med => med.quantity > 0); // Remove medicines with 0 quantity
           
           // Recalculate total amount based on remaining medicines and discount type
-          let newTotalAmount = remainingMedicines.reduce((sum, med) => sum + (med.quantity * med.sellingPrice), 0);
+          let newTotalAmount = remainingMedicines.reduce((sum, med) => sum + (Number(med.quantity) * Number(med.sellingPrice)), 0);
           
           if (saleToDelete.discountPercentage < 0) {
             // Fixed amount discount - keep the same fixed discount
@@ -180,7 +180,7 @@ export default function SalesRecordsPage() {
             newTotalAmount = Math.max(0, newTotalAmount - discountAmount);
           }
           
-          const updatedSale = {
+          const updatedSale: RecordedSale = {
             ...saleToDelete,
             medicines: remainingMedicines,
             totalAmount: newTotalAmount,

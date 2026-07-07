@@ -67,7 +67,7 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
                 message: 'Please enter a valid email address'
               }
             })}
-            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+            className={`w-full px-4 py-3 border rounded-lg bg-white text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
               errors.email ? 'border-red-300' : 'border-gray-300'
             }`}
             placeholder="Enter your email"
@@ -93,7 +93,7 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
                 message: 'Password must be at least 6 characters'
               }
             })}
-            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+            className={`w-full px-4 py-3 border rounded-lg bg-white text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
               errors.password ? 'border-red-300' : 'border-gray-300'
             }`}
             placeholder="Enter your password"

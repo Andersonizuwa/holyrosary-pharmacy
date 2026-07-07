@@ -262,9 +262,6 @@ export const DashboardExampleComponent: React.FC = () => {
       <NotificationModal
         isOpen={showModal}
         onClose={closeModal}
-        lowStock={lowStock}
-        outOfStock={outOfStock}
-        expired={expired}
       />
     </div>
   );
